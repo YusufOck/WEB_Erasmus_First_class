@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mehmet Yusuf Ocak - Erasmus Web Projesi</title>
+    <!-- Modern tipografi -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-container main-wrapper">
+        <!-- Kişisel Bilgiler -->
+        <header class="profile-header">
+            <div class="profile-info">
+                <h1>Mehmet Yusuf Ocak</h1>
+                <p class="subtitle">Computer Engineering Student | AI & Robotics Researcher</p>
+                <div class="contact-info">
+                    <span>📧 yusuf.ock2611@gmail.com</span>
+                    <span>📞 (+90) 554 027 8846</span>
+                </div>
+            </div>
+            <div class="skills">
+                <h3>Yetenekler</h3>
+                <div class="skill-tags">
+                    <span class="tag">C++ / C# (.NET)</span>
+                    <span class="tag">Python / Java</span>
+                    <span class="tag">ROS 2 / Gazebo</span>
+                    <span class="tag">OpenCV / YOLO</span>
+                    <span class="tag">Docker / Git</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Aşama 1: Statik Front-end ve Validasyon -->
+            <!-- Aşama 3: Backend REST'e POST isteği atma -->
+            <section class="card form-section">
+                <h2>Okuma Listesine Kitap Ekle</h2>
+                <form id="addBookForm">
+                    <div class="form-group">
+                        <label for="bookTitle">Kitap Başlığı <span class="required">*</span></label>
+                        <input type="text" id="bookTitle" placeholder="Örn: 1984">
+                        <small class="error-text" id="titleError"></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookAuthor">Yazar <span class="required">*</span></label>
+                        <input type="text" id="bookAuthor" placeholder="Örn: George Orwell">
+                        <small class="error-text" id="authorError"></small>
+                    </div>
+                    <button type="submit" class="btn primary-btn">Listeye Ekle</button>
+                    <div id="formFeedback" class="feedback-msg"></div>
+                </form>
+            </section>
+
+            <!-- Aşama 3: Kendi Backend REST API'mizden (GET/DELETE) -->
+            <section class="card list-section">
+                <h2>Kişisel Okuma Listem (API Bağlantılı)</h2>
+                <div id="readingList" class="reading-list">
+                    <!-- Dinamik Olarak API'den Dolacak -->
+                    <p class="loading-text">Veriler yükleniyor...</p>
+                </div>
+            </section>
+
+            <!-- Aşama 2: Harici API Kullanımı (Open Library) -->
+            <section class="card api-section">
+                <h2>Open Library - Kitap Keşfet</h2>
+                <div class="search-box">
+                    <input type="text" id="searchQuery" placeholder="Kitap ismi ile ara (Örn: Lord of the Rings)">
+                    <button id="searchBtn" class="btn secondary-btn">API'de Ara</button>
+                </div>
+                <!-- Yükleniyor Göstergesi -->
+                <div id="loadingIndicator" class="loading hidden">
+                    <div class="spinner"></div>
+                    <span>Arama yapılıyor, lütfen bekleyin...</span>
+                </div>
+                <!-- Hata Mesajı -->
+                <div id="apiError" class="error-msg hidden"></div>
+                
+                <div id="searchResults" class="search-results">
+                    <!-- Dinamik Sonuçlar -->
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>Erasmus Web Projesi &copy; 2026 - Mehmet Yusuf Ocak</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
