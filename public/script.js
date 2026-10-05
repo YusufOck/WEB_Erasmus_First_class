@@ -1,4 +1,112 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- DICTIONARY ---
+    const i18n = {
+        en: {
+            nav_profile: "Profile",
+            nav_add: "Add Book",
+            nav_list: "Reading List",
+            nav_search: "Search API",
+            subtitle: "Computer Engineering Student | AI & Robotics Researcher",
+            skills_title: "Skills",
+            add_book_title: "Add Book to Reading List",
+            book_title_label: "Book Title",
+            book_title_placeholder: "e.g. 1984",
+            author_label: "Author",
+            author_placeholder: "e.g. George Orwell",
+            btn_add_list: "Add to List",
+            my_list_title: "My Reading List (API Connected)",
+            loading_data: "Loading data...",
+            discover_title: "Open Library - Discover Books",
+            search_placeholder: "Search by book title (e.g. Lord of the Rings)",
+            btn_search_api: "Search API",
+            searching_wait: "Searching, please wait...",
+            error_title_empty: "Book title cannot be empty.",
+            error_author_empty: "Author name cannot be empty.",
+            success_add: "Book successfully added to the list!",
+            error_server: "Server error",
+            error_add_failed: "Error: Failed to add book.",
+            empty_list: "Your reading list is currently empty.",
+            error_load_list: "An error occurred while loading the list.",
+            btn_delete: "Delete",
+            confirm_delete: "Are you sure you want to delete this book?",
+            delete_failed: "Deletion failed.",
+            delete_error: "An error occurred during deletion.",
+            no_results: "No results found.",
+            unknown_author: "Unknown Author",
+            error_api_req: "API request failed. Status: ",
+            error_api_occurred: "An error occurred: "
+        },
+        tr: {
+            nav_profile: "Profil",
+            nav_add: "Kitap Ekle",
+            nav_list: "Okuma Listesi",
+            nav_search: "API'de Ara",
+            subtitle: "Bilgisayar Mühendisliği Öğrencisi | Yapay Zeka ve Robotik Araştırmacısı",
+            skills_title: "Yetenekler",
+            add_book_title: "Okuma Listesine Kitap Ekle",
+            book_title_label: "Kitap Başlığı",
+            book_title_placeholder: "Örn: 1984",
+            author_label: "Yazar",
+            author_placeholder: "Örn: George Orwell",
+            btn_add_list: "Listeye Ekle",
+            my_list_title: "Okuma Listem (API Bağlantılı)",
+            loading_data: "Veriler yükleniyor...",
+            discover_title: "Open Library - Kitap Keşfet",
+            search_placeholder: "Kitap ismi ile ara (Örn: Lord of the Rings)",
+            btn_search_api: "API'de Ara",
+            searching_wait: "Arama yapılıyor, lütfen bekleyin...",
+            error_title_empty: "Kitap başlığı boş bırakılamaz.",
+            error_author_empty: "Yazar ismi boş bırakılamaz.",
+            success_add: "Kitap başarıyla listeye eklendi!",
+            error_server: "Sunucu hatası",
+            error_add_failed: "Hata: Kitap eklenemedi.",
+            empty_list: "Listeniz şu an boş.",
+            error_load_list: "Liste yüklenirken bir hata oluştu.",
+            btn_delete: "Sil",
+            confirm_delete: "Silmek istediğinize emin misiniz?",
+            delete_failed: "Silme işlemi başarısız oldu.",
+            delete_error: "Silme işlemi sırasında hata oluştu.",
+            no_results: "Sonuç bulunamadı.",
+            unknown_author: "Bilinmeyen Yazar",
+            error_api_req: "API isteği başarısız oldu. Durum: ",
+            error_api_occurred: "Bir hata oluştu: "
+        }
+    };
+
+    let currentLang = localStorage.getItem('lang') || 'en';
+    const langBtn = document.getElementById('langToggle');
+
+    function updateLanguage() {
+        // Toggle btn text indicates the *other* language you can switch to
+        langBtn.textContent = currentLang === 'en' ? 'TR' : 'EN';
+        document.documentElement.lang = currentLang;
+
+        // Update static DOM elements
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (i18n[currentLang][key]) {
+                el.textContent = i18n[currentLang][key];
+            }
+        });
+
+        // Update placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (i18n[currentLang][key]) {
+                el.placeholder = i18n[currentLang][key];
+            }
+        });
+        
+        // Re-render dynamic list if needed
+        fetchReadingList();
+    }
+
+    langBtn.addEventListener('click', () => {
+        currentLang = currentLang === 'en' ? 'tr' : 'en';
+        localStorage.setItem('lang', currentLang);
+        updateLanguage();
+    });
+
     // --- THEME TOGGLE LOGIC ---
     const toggleSwitch = document.getElementById('checkbox');
     const currentTheme = localStorage.getItem('theme');
@@ -20,6 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }    
     });
 
+    // Helper to get translated string
+    function t(key) {
+        return i18n[currentLang][key] || key;
+    }
+
     // --- STAGE 1: FORM VALIDATION & STAGE 3: BACKEND POST ---
     const form = document.getElementById('addBookForm');
     const titleInput = document.getElementById('bookTitle');
@@ -31,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Reset errors
         titleError.textContent = '';
         authorError.textContent = '';
         formFeedback.textContent = '';
@@ -40,12 +152,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let isValid = true;
 
         if (!titleInput.value.trim()) {
-            titleError.textContent = 'Book title cannot be empty.';
+            titleError.textContent = t('error_title_empty');
             isValid = false;
         }
 
         if (!authorInput.value.trim()) {
-            authorError.textContent = 'Author name cannot be empty.';
+            authorError.textContent = t('error_author_empty');
             isValid = false;
         }
 
@@ -61,15 +173,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.ok) {
-                    formFeedback.textContent = 'Book successfully added to the list!';
+                    formFeedback.textContent = t('success_add');
                     formFeedback.classList.add('success');
                     form.reset();
                     fetchReadingList();
                 } else {
-                    throw new Error('Server error');
+                    throw new Error(t('error_server'));
                 }
             } catch (err) {
-                formFeedback.textContent = 'Error: Failed to add book.';
+                formFeedback.textContent = t('error_add_failed');
                 formFeedback.classList.add('error');
             }
         }
@@ -86,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             readingListContainer.innerHTML = '';
             
             if (data.length === 0) {
-                readingListContainer.innerHTML = '<p style="color: var(--text-secondary);">Your reading list is currently empty.</p>';
+                readingListContainer.innerHTML = `<p style="color: var(--text-secondary);">${t('empty_list')}</p>`;
                 return;
             }
 
@@ -98,32 +210,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         <strong>${book.title}</strong>
                         <span>${book.author}</span>
                     </div>
-                    <button class="delete-btn" onclick="deleteBook(${book.id})">Delete</button>
+                    <button class="delete-btn" onclick="deleteBook(${book.id})">${t('btn_delete')}</button>
                 `;
                 readingListContainer.appendChild(bookDiv);
             });
         } catch (error) {
-            readingListContainer.innerHTML = '<p class="error-text">An error occurred while loading the list.</p>';
+            readingListContainer.innerHTML = `<p class="error-text">${t('error_load_list')}</p>`;
         }
     }
 
     window.deleteBook = async function(id) {
-        if(confirm('Are you sure you want to delete this book?')) {
+        if(confirm(t('confirm_delete'))) {
             try {
                 const response = await fetch(`/api/books/${id}`, { method: 'DELETE' });
                 if(response.ok) {
                     fetchReadingList();
                 } else {
-                    alert('Deletion failed.');
+                    alert(t('delete_failed'));
                 }
             } catch (error) {
-                alert('An error occurred during deletion.');
+                alert(t('delete_error'));
             }
         }
     };
-
-    // Initial load
-    fetchReadingList();
 
     // --- STAGE 2: OPEN LIBRARY API USAGE (SEARCH) ---
     const searchBtn = document.getElementById('searchBtn');
@@ -136,28 +245,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = searchInput.value.trim();
         if (!query) return;
 
-        // Reset UI
         searchResults.innerHTML = '';
         apiError.classList.add('hidden');
         loadingIndicator.classList.remove('hidden');
 
         try {
-            // Fetch Request
             const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=4`);
             
             if (!response.ok) {
-                throw new Error('API request failed. Status: ' + response.status);
+                throw new Error(t('error_api_req') + response.status);
             }
 
             const data = await response.json();
             loadingIndicator.classList.add('hidden');
 
             if (data.docs.length === 0) {
-                searchResults.innerHTML = '<p style="color: var(--text-secondary);">No results found.</p>';
+                searchResults.innerHTML = `<p style="color: var(--text-secondary);">${t('no_results')}</p>`;
                 return;
             }
 
-            // Render Results
             data.docs.forEach(book => {
                 const card = document.createElement('div');
                 card.className = 'api-book-card';
@@ -166,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` 
                     : 'https://via.placeholder.com/150x200/1e293b/94a3b8?text=No+Cover';
 
-                const authorName = book.author_name ? book.author_name[0] : 'Unknown Author';
+                const authorName = book.author_name ? book.author_name[0] : t('unknown_author');
 
                 card.innerHTML = `
                     <img src="${coverUrl}" alt="${book.title} Cover">
@@ -180,8 +286,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             loadingIndicator.classList.add('hidden');
-            apiError.textContent = 'An error occurred: ' + error.message;
+            apiError.textContent = t('error_api_occurred') + error.message;
             apiError.classList.remove('hidden');
         }
     });
+
+    // Initialize translations & fetch list
+    updateLanguage();
 });
