@@ -1,4 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- THEME TOGGLE LOGIC ---
+    const toggleSwitch = document.getElementById('checkbox');
+    const currentTheme = localStorage.getItem('theme');
+
+    if (currentTheme) {
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        if (currentTheme === 'light') {
+            toggleSwitch.checked = true;
+        }
+    }
+
+    toggleSwitch.addEventListener('change', function(e) {
+        if (e.target.checked) {
+            document.documentElement.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        }    
+    });
+
     // --- STAGE 1: FORM VALIDATION & STAGE 3: BACKEND POST ---
     const form = document.getElementById('addBookForm');
     const titleInput = document.getElementById('bookTitle');
@@ -19,17 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
         let isValid = true;
 
         if (!titleInput.value.trim()) {
-            titleError.textContent = 'Kitap başlığı boş bırakılamaz.';
+            titleError.textContent = 'Book title cannot be empty.';
             isValid = false;
         }
 
         if (!authorInput.value.trim()) {
-            authorError.textContent = 'Yazar ismi boş bırakılamaz.';
+            authorError.textContent = 'Author name cannot be empty.';
             isValid = false;
         }
 
         if (isValid) {
-            // Stage 3: POST to Backend API
             try {
                 const response = await fetch('/api/books', {
                     method: 'POST',
@@ -41,15 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (response.ok) {
-                    formFeedback.textContent = 'Kitap başarıyla listeye eklendi!';
+                    formFeedback.textContent = 'Book successfully added to the list!';
                     formFeedback.classList.add('success');
                     form.reset();
-                    fetchReadingList(); // Listeyi yenile
+                    fetchReadingList();
                 } else {
-                    throw new Error('Sunucu hatası');
+                    throw new Error('Server error');
                 }
             } catch (err) {
-                formFeedback.textContent = 'Hata: Kitap eklenemedi.';
+                formFeedback.textContent = 'Error: Failed to add book.';
                 formFeedback.classList.add('error');
             }
         }
@@ -66,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
             readingListContainer.innerHTML = '';
             
             if (data.length === 0) {
-                readingListContainer.innerHTML = '<p style="color: #94a3b8;">Listeniz şu an boş.</p>';
+                readingListContainer.innerHTML = '<p style="color: var(--text-secondary);">Your reading list is currently empty.</p>';
                 return;
             }
 
@@ -78,32 +98,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         <strong>${book.title}</strong>
                         <span>${book.author}</span>
                     </div>
-                    <button class="delete-btn" onclick="deleteBook(${book.id})">Sil</button>
+                    <button class="delete-btn" onclick="deleteBook(${book.id})">Delete</button>
                 `;
                 readingListContainer.appendChild(bookDiv);
             });
         } catch (error) {
-            readingListContainer.innerHTML = '<p class="error-text">Liste yüklenirken bir hata oluştu.</p>';
+            readingListContainer.innerHTML = '<p class="error-text">An error occurred while loading the list.</p>';
         }
     }
 
-    // Silme işlemi globale alınıyor HTML'den çağrılabilmesi için
     window.deleteBook = async function(id) {
-        if(confirm('Bu kitabı silmek istediğinize emin misiniz?')) {
+        if(confirm('Are you sure you want to delete this book?')) {
             try {
                 const response = await fetch(`/api/books/${id}`, { method: 'DELETE' });
                 if(response.ok) {
                     fetchReadingList();
                 } else {
-                    alert('Silme işlemi başarısız oldu.');
+                    alert('Deletion failed.');
                 }
             } catch (error) {
-                alert('Silme işlemi sırasında hata oluştu.');
+                alert('An error occurred during deletion.');
             }
         }
     };
 
-    // Sayfa yüklendiğinde listeyi çek
+    // Initial load
     fetchReadingList();
 
     // --- STAGE 2: OPEN LIBRARY API USAGE (SEARCH) ---
@@ -117,49 +136,51 @@ document.addEventListener('DOMContentLoaded', () => {
         const query = searchInput.value.trim();
         if (!query) return;
 
-        // Arayüzü resetle
+        // Reset UI
         searchResults.innerHTML = '';
         apiError.classList.add('hidden');
         loadingIndicator.classList.remove('hidden');
 
         try {
-            // Open Library API'ye Fetch İsteği
+            // Fetch Request
             const response = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=4`);
             
             if (!response.ok) {
-                throw new Error('API isteği başarısız oldu. Durum kodu: ' + response.status);
+                throw new Error('API request failed. Status: ' + response.status);
             }
 
             const data = await response.json();
             loadingIndicator.classList.add('hidden');
 
             if (data.docs.length === 0) {
-                searchResults.innerHTML = '<p style="color:#94a3b8;">Sonuç bulunamadı.</p>';
+                searchResults.innerHTML = '<p style="color: var(--text-secondary);">No results found.</p>';
                 return;
             }
 
-            // Gelen verileri ekrana çiz
+            // Render Results
             data.docs.forEach(book => {
                 const card = document.createElement('div');
                 card.className = 'api-book-card';
                 
                 const coverUrl = book.cover_i 
                     ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` 
-                    : 'https://via.placeholder.com/150x200/1e293b/94a3b8?text=Kapak+Yok';
+                    : 'https://via.placeholder.com/150x200/1e293b/94a3b8?text=No+Cover';
 
-                const authorName = book.author_name ? book.author_name[0] : 'Bilinmeyen Yazar';
+                const authorName = book.author_name ? book.author_name[0] : 'Unknown Author';
 
                 card.innerHTML = `
                     <img src="${coverUrl}" alt="${book.title} Cover">
-                    <h4 style="color:#f8fafc; font-size:1rem; margin-bottom:0.3rem">${book.title}</h4>
-                    <p style="color:#94a3b8; font-size:0.85rem">${authorName}</p>
+                    <div>
+                        <h4 style="color:var(--text-primary); font-size:1rem; margin-bottom:0.3rem">${book.title}</h4>
+                        <p style="color:var(--text-secondary); font-size:0.85rem">${authorName}</p>
+                    </div>
                 `;
                 searchResults.appendChild(card);
             });
 
         } catch (error) {
             loadingIndicator.classList.add('hidden');
-            apiError.textContent = 'Bir hata oluştu: ' + error.message;
+            apiError.textContent = 'An error occurred: ' + error.message;
             apiError.classList.remove('hidden');
         }
     });
